@@ -3,12 +3,18 @@ import java.util.List;
 import java.util.Optional;
 
 public class FileCabinet implements Cabinet {
-    private List<Folder> folders;
-    private final List<Folder> allFolders = getAllFolders();
+    private final List<Folder> folders;
+    private final List<Folder> allFolders;
+    private final List<Folder> helpList = new ArrayList<>();
+
+    public FileCabinet(List<Folder> folders) {
+        this.folders = folders;
+        this.allFolders = getAllFolders();
+    }
 
     @Override
     public Optional<Folder> findFolderByName(String name) {
-        for (Folder folder : folders) {
+        for (Folder folder : allFolders) {
             if (folder.getName().equals(name)) {
                 return Optional.of(folder);
             }
@@ -20,7 +26,7 @@ public class FileCabinet implements Cabinet {
     public List<Folder> findFoldersBySize(String size) {
         List<Folder> foldersBySize = new ArrayList<>();
         for (Folder folder : allFolders) {
-            if (folder.getSize().equals(size)) {
+            if (folder.getSize().equalsIgnoreCase(size)) {
                 foldersBySize.add(folder);
             }
         }
@@ -33,17 +39,28 @@ public class FileCabinet implements Cabinet {
     }
 
     private List<Folder> getAllFolders() {
-        List<Folder> allFolders = new ArrayList<>();
         if (folders != null) {
-            for (Folder folder : folders) {
-                if (folder instanceof MultiFolder) {
-                    List<Folder> subFolders = ((MultiFolder) folder).getFolders();
-                    allFolders.addAll(subFolders);
-                } else {
-                    allFolders.add(folder);
-                }
+            return getAll(folders);
+        } else {
+            return new ArrayList<>();
+        }
+    }
+
+    private boolean isMultiFolder(Folder folder) {
+        return folder instanceof MultiFolder;
+    }
+
+    private List<Folder> getAll(List<Folder> list) {
+        for (Folder f : list) {
+            if (isMultiFolder(f)) {
+                helpList.add(f);
+                List<Folder> subFolders = ((MultiFolder) f).getFolders();
+                getAll(subFolders);
+            }
+            if (!helpList.contains(f)) {
+                helpList.add(f);
             }
         }
-        return allFolders;
+        return helpList;
     }
 }
